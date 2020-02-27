@@ -1,5 +1,5 @@
 from flask import Flask, request, render_template
-import urllib
+import urllib.request
 # import boto3
 
 # print a nice greeting.
@@ -43,8 +43,18 @@ def QueryName():
 
 @application.route('/load/', methods=['POST'])
 def LoadData():
-    message = "Loaded data."
-    return render_template('index.html', loadMessage=message)
+    target_url = "https://s3-us-west-2.amazonaws.com/css490/input.txt"
+    
+    headers = {}
+    headers['User-Agent'] = 'Mozilla/5.0 (X11; Linux i686) AppleWebKit/537.17 (KHTML, like Gecko) Chrome/24.0.1312.27 Safari/537.17'
+
+    request = urllib.request.Request(target_url, headers=headers)
+    resp = urllib.request.urlopen(request)
+    respData = resp.read()
+
+    # print(respData)
+    # message = "Loaded data."
+    return render_template('index.html', loadMessage=respData)
 
 @application.route('/delete/', methods=['POST'])
 def DeleteData():
