@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang=en>
+
+<head>
+    <meta charset='UTF-8'>
+    <title>Splash Page</title>
+</head>
+<body>
+    <a href="http://127.0.0.1:5000/">Home</a>
+    <p>
+        <!-- <form method="POST"> -->
+        <form action="/query/" method="post">
+        <h3>Last Name</h3>
+        <input name='last'>
+        <h3>First Name</h3>
+        <input name='first'>
+        <!-- <input type='Submit'> -->
+        
+        <button name="queryData" type="submit">Submit</button>
+        <h5>{{ queryMessage }}</h5>
+        <br>
+        </form>
+    </p>
+    <br>
+    <p>
+        <h3>Load Data from URL</h3>
+        <form action="/load/" method="post">
+        <button name="loadData" type="submit">Load</button>
+        <h5>{{ loadMessage }}</h5>
+        </form>
+    </p>
+    <br>
+    <p>
+        <h3>Delete Data From Database</h3>
+        <form action="/delete/" method="post">
+        <button name="deleteData" type="submit">Delete</button>
+        <h5>{{ deleteMessage }}</h5>
+    </form>
+    </p>
+    
+</body>
+</html>
