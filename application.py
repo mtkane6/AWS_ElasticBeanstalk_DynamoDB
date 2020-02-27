@@ -49,12 +49,14 @@ def LoadData():
     headers['User-Agent'] = 'Mozilla/5.0 (X11; Linux i686) AppleWebKit/537.17 (KHTML, like Gecko) Chrome/24.0.1312.27 Safari/537.17'
 
     request = urllib.request.Request(target_url, headers=headers)
-    resp = urllib.request.urlopen(request)
-    respData = resp.read()
+    resp = urllib.request.urlopen(request).read().decode('UTF-8')
 
-    # print(respData)
+    textLines = resp.split('\r\n')
+
+    dataList = [[line.split(' ')[i] for i in range(len(line.split(' ')))] for line in textLines]
+
     # message = "Loaded data."
-    return render_template('index.html', loadMessage=respData)
+    return render_template('index.html', loadMessage=dataList)
 
 @application.route('/delete/', methods=['POST'])
 def DeleteData():
