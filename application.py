@@ -1,5 +1,6 @@
 from flask import Flask, request, render_template
 import urllib.request
+import DynamoUtils
 # import boto3
 
 # print a nice greeting.
@@ -48,15 +49,33 @@ def LoadData():
     headers = {}
     headers['User-Agent'] = 'Mozilla/5.0 (X11; Linux i686) AppleWebKit/537.17 (KHTML, like Gecko) Chrome/24.0.1312.27 Safari/537.17'
 
-    request = urllib.request.Request(target_url, headers=headers)
-    resp = urllib.request.urlopen(request).read().decode('UTF-8')
+    try:
+        request = urllib.request.Request(target_url, headers=headers)
+        resp = urllib.request.urlopen(request).read().decode('UTF-8')
+    except Exception as e:
+        errorString = "Error: %s" %e
+        return errorString
+    
+    # creation of dynamodb table
+    currTable = DynamoUtils.CreateTable()
 
     textLines = resp.split('\r\n')
 
     dataList = [[line.split(' ')[i] for i in range(len(line.split(' ')))] for line in textLines]
 
+    for inputLine in range(dataList):
+        if len(inputLine) > 1: # if has at least lastName, firstName...
+            lastName, firstName = inputLine[0], inputLine[1]
+            attributes = inputLine[2:]
+            try:
+                DynamoUtils.InputDynamoData(lastName, firstName, attributes, currTable)
+            except Exception as e:
+                errorString = "Error: %s" %e
+                return errorString
+    
+
     # message = "Loaded data."
-    return render_template('index.html', loadMessage=dataList)
+    return render_template('index.html', loadMessage=attributes)
 
 @application.route('/delete/', methods=['POST'])
 def DeleteData():
