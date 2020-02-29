@@ -111,53 +111,6 @@ def QueryDynamodb(currTableName, lastName, firstName):
 
 
 
-
-
-
-
-    # table = dynamodb.Table('0727916mtkuweduDataMemberscss436')
-    # table.put_item(
-    #     Item={
-    #         'LastName': 'Kane',
-    #         'FirstName': 'Mitchell',
-    #         'MemberData': 'Play=golf',        }
-    # )
-
-#     response = table.get_item(
-#     Key={
-#         'LastName': 'Kane',
-#         'FirstName': 'Mitchell',
-#     }
-# )
-#     item = response['Item']
-#     print(item)
-#     print(table.item_count)
-    
-    
-
-# currTable is the dynamodb table to input data to
-# def InputDynamoData(lastName, firstName, attributes, currTable):
-
-#     # inputAttributes = [item for item in range(attributes) if "=" in item]
-#     inputAttributes = []
-#     for item in range(attributes):
-#         # this is to avoid attempting to input white space, like " "
-#         if "=" in item:
-#             inputAttributes.append(item)
-#             # input last, first, inputAttributes
-#     dataString = " ".join(inputAttributes)
-#     currTable.put_item(
-#         Item={
-#             'LastName': lastName,
-#             'FirstName': firstName,
-#             'memberData': dataString
-#         }
-#     )
-
-
-
-
-
 # parses data lines to remove white space, leaving only last, first, and attributes
 def BuildDataMemberAttributes(inputLine):
     inputAttributes = []
@@ -179,10 +132,10 @@ def BuildDataMemberAttributes(inputLine):
 
 
 
-def DeleteDynamoTable():
+def DeleteDynamoTable(tableName):
     try:
         dynamodb = boto3.resource('dynamodb', region_name='us-west-2')
-        table = dynamodb.Table('0727916mtkuweduDataMemberscss436')
+        table = dynamodb.Table(tableName)
         table.delete()
         return("Delete table success.")
     except:

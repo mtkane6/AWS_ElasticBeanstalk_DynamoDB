@@ -77,10 +77,9 @@ def DeleteLocalFile(fileName):
     os.remove(fileName)
     return
 
-def DeleteS3Bucket():
+def DeleteS3Bucket(bucketName):
     s3 = boto3.resource('s3')
-    bucketName = '0727916mtkuwedudatamemberscss436'
     # first delete the object in the bucket, then the bucket iteself
     s3.Object(bucketName, 'input.txt').delete()
-    s3.Bucket('0727916mtkuwedudatamemberscss436').delete()
+    s3.Bucket(bucketName).delete()
     return
