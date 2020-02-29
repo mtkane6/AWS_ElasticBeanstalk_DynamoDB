@@ -2,11 +2,23 @@ from flask import Flask, request, render_template
 import urllib.request
 import DynamoUtils
 import S3Utils
-# import boto3
+import string
 
 
 # EB looks for an 'application' callable by default.
 application = Flask(__name__)
+
+def GetDynamoDbTableName():
+    return '0727916mtkuweduDataMemberscss436'
+
+def GetS3BucketName():
+    return '0727916mtkuwedudatamemberscss436'
+
+def GetLocalFileName():
+    return 'input.txt'
+
+
+    
 
 @application.route('/')
 def HomePage():
@@ -14,9 +26,9 @@ def HomePage():
 
 @application.route('/query/', methods=['POST'])
 def QueryName():
-    lastName = request.form['last']
-    firstName = request.form['first']
-    message = firstName + ", " + lastName
+    lastName = request.form['last'].lower().title()
+    firstName = request.form['first'].lower().title()
+    message = DynamoUtils.QueryDynamodb(GetDynamoDbTableName(), lastName, firstName)
     return render_template('index.html', queryMessage = message)
 
 @application.route('/load/', methods=['POST'])
@@ -35,14 +47,10 @@ def LoadData():
         return errorString
 
     # creation of dynamodb table
-    currTableName = DynamoUtils.CreateTable()
-    # if not currTableName:
-    #     return("Error creating DynamoDB table")
+    currTableName = DynamoUtils.CreateTable(GetDynamoDbTableName())
 
     # attempt to create s3 bucket to store parsed data
-    bucketCreationName = S3Utils.CreateS3Bucket()
-    # if not bucketCreationName:
-    #     return("Error creating s3 bucket")
+    bucketCreationName = S3Utils.CreateS3Bucket(GetS3BucketName())
 
     # create list of lines of member data from txt file
     textLines = resp.split('\r\n')
@@ -50,14 +58,13 @@ def LoadData():
     # split each line of data into lists of individual strings
     dataList = [[line.split(' ')[i] for i in range(len(line.split(' ')))] for line in textLines]
 
-    localFileName = S3Utils.CreateFileForS3(dataList)
-    # if not localFileName:
-    #     return("Error creating local file")
+    # create local file with data from url endpoint
+    localFileName = S3Utils.CreateFileForS3(dataList, GetLocalFileName())
 
+    # copy local file created above to s3 bucket
     s3Boolean = S3Utils.CopyFileToS3(localFileName, bucketCreationName)
-    # if not s3Boolean:
-    #     return("Error during upload of data to s3 storage")
 
+    # upload data from local file to dynamodb
     localFileToDynamo = DynamoUtils.InputLocalFileDataToDynamoDB(localFileName, currTableName)
 
 
@@ -67,9 +74,19 @@ def LoadData():
 
 @application.route('/delete/', methods=['POST'])
 def DeleteData():
+    try:
+        DynamoUtils.DeleteDynamoTable(GetDynamoDbTableName())
+    except Exception as e:
+        print("Error deleting dynamodb from appl.py: ", e)
+    try:
+        S3Utils.DeleteLocalFile(GetLocalFileName())
+    except Exception as e:
+        print("Error deleting local file from app.py: ", e)
+    try:
+        S3Utils.DeleteS3Bucket(GetS3BucketName())
+    except Exception as e:
+        print("Error deleting s3 bucket from app.py: ", e)
     message = "Deleted local file, s3 bucket, and dynamodb."
-    DynamoUtils.DeleteDynamoTable()
-    S3Utils.DeleteLocalFile()
     return render_template('index.html', deleteMessage=message)
 
 
@@ -79,3 +96,4 @@ if __name__ == "__main__":
     # removed before deploying a production app.
     application.debug = True
     application.run()
+

@@ -2,13 +2,14 @@ import application
 import string
 import boto3
 import os
+from boto3.dynamodb.conditions import Key, Attr
 
 
-def CreateTable():
+def CreateTable(tableName):
     dynamodb = boto3.resource('dynamodb', region_name='us-west-2')
     try:
         table = dynamodb.create_table(
-            TableName='0727916mtkuweduDataMemberscss436',
+            TableName= tableName,
             KeySchema=[
             {
                 'AttributeName': 'LastName',
@@ -33,11 +34,11 @@ def CreateTable():
                 'WriteCapacityUnits': 10  
             }
         )
-        table.meta.client.get_waiter('table_exists').wait(TableName='0727916mtkuweduDataMemberscss436')
-        return '0727916mtkuweduDataMemberscss436'
+        table.meta.client.get_waiter('table_exists').wait(TableName=tableName)
+        return tableName
     except Exception as e:
         print("Creating db table, ignoring error: ", e)
-        return('0727916mtkuweduDataMemberscss436')
+        return(tableName)
 
 
 # locaFileName = 'input.txt'
@@ -73,23 +74,46 @@ def InputLocalFileDataToDynamoDB(localFileName, currTableName):
     return(True)
 
 
-def QueryDynamodb(currTableName, firstName, lastName):
+def QueryDynamodb(currTableName, lastName, firstName):
     try:
         dynamodb = boto3.resource('dynamodb', region_name='us-west-2')
         table = dynamodb.Table(currTableName)
     except Exception as e:
         print("Open dynamo table error: ", e)
         return(False)
+    if lastName and firstName:
+        try:
+            response = table.get_item(
+                Key={
+                    'LastName': lastName,
+                    'FirstName': firstName,
+                }
+            )
+        except Exception as e:
+            print("get item error; last, first: ", e)
+        returnString = [response['Item']['FirstName'] + " " + response['Item']['LastName'] + " " + response['Item']['MemberData'][:-1]]
+        return returnString
+    elif lastName:
+        try:
+            response = table.query(
+                KeyConditionExpression=Key('LastName').eq(lastName)
+            )
+        except Exception as e:
+            print("get item error; last: ", e)
+            return(['Item not in database.'])
 
-    response = table.get_item(
-    Key={
-        'LastName': lastName,
-        'FirstName': firstName,
-    }
-)
-    item = response['Item']
-    print(item)
-    print(table.item_count)
+        dataString = [[item['FirstName'], item['LastName'], item['MemberData']] for item in response['Items']]
+        returnStringList = [' '.join(dataString[i]) for i in range(len(dataString))]
+        returnString = ' '.join(returnStringList)
+        print(returnStringList)
+
+        return returnStringList
+
+
+
+
+
+
 
     # table = dynamodb.Table('0727916mtkuweduDataMemberscss436')
     # table.put_item(

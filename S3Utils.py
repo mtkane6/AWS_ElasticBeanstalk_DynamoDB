@@ -5,23 +5,23 @@ import datetime
 
 
 
-def CreateS3Bucket():
+def CreateS3Bucket(bucketName):
     s3 = boto3.resource("s3")
     try:
-        newBucket = "0727916mtkuwedudatamemberscss436"
-        if s3.Bucket("0727916mtkuwedudatamemberscss436") not in s3.buckets.all():
+        newBucket = bucketName
+        if s3.Bucket(bucketName) not in s3.buckets.all():
             s3.create_bucket(Bucket=newBucket, CreateBucketConfiguration={'LocationConstraint':'ap-northeast-1'})
-        return("0727916mtkuwedudatamemberscss436")
+        return(bucketName)
     except Exception as e:
         print(e)
     
 
 # creates local file with cleaned data from website
-def CreateFileForS3(linesOfData):
+def CreateFileForS3(linesOfData, fileName):
     try:
-        if os.path.exists("input.txt"):
-            os.remove("input.txt")
-        with open("input.txt", "a") as localTextFile:
+        if os.path.exists(fileName):
+            os.remove(fileName)
+        with open(fileName, "a") as localTextFile:
             for i in range(len(linesOfData)-1):
                 if len(linesOfData[i]) > 1:
                     try:
@@ -29,7 +29,7 @@ def CreateFileForS3(linesOfData):
                         localTextFile.write(cleanedDataString + "\n")
                     except Exception as e:
                         print(e)
-        return "input.txt"
+        return fileName
     except Exception as e:
         print(e)
 
@@ -43,7 +43,6 @@ def CopyFileToS3(localFileName, bucketName):
                 currentPath = root+slash+currentFile
                 if localFileName in currentPath:
                     if not str.startswith(currentFile,'.DS_'): # for MacOS, this skips ".DS_Store" files, which serve indexing purposes.
-                        # currentFileName = root + slash + currentFile
                         # get last modified time of local file
                         try:
                             localFileLastModified = datetime.datetime.utcfromtimestamp(os.path.getmtime(currentPath)).strftime('%Y-%m-%d %H:%M:%S')
@@ -58,7 +57,6 @@ def CopyFileToS3(localFileName, bucketName):
                             # check to see if file modified since last upload
                             if localFileLastModified > objectFileLastModified:
                                 try:
-                                    print("Currentfile: ", currentFile)
                                     s3.Object(bucketName, currentFile).put(Body=open(currentFile,"rb"))
                                     uploadSuccess = True
                                 except Exception as e:
@@ -75,8 +73,8 @@ def CopyFileToS3(localFileName, bucketName):
         print("Error during upload to s3 function: ", e)
 
 
-def DeleteLocalFile():
-    os.remove("input.txt")
+def DeleteLocalFile(fileName):
+    os.remove(fileName)
     return
 
 def DeleteS3Bucket():

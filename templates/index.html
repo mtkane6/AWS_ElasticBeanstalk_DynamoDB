@@ -17,7 +17,9 @@
         <!-- <input type='Submit'> -->
         
         <button name="queryData" type="submit">Submit</button>
-        <h5>{{ queryMessage }}</h5>
+        {%for data in queryMessage%}
+        <h5>{{ data }}</h5>
+        {% endfor %}
         <br>
         </form>
     </p>
