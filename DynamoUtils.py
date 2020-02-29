@@ -75,6 +75,7 @@ def InputLocalFileDataToDynamoDB(localFileName, currTableName):
 
 
 def QueryDynamodb(currTableName, lastName, firstName):
+    print(firstName)
     try:
         dynamodb = boto3.resource('dynamodb', region_name='us-west-2')
         table = dynamodb.Table(currTableName)
@@ -91,6 +92,7 @@ def QueryDynamodb(currTableName, lastName, firstName):
             )
         except Exception as e:
             print("get item error; last, first: ", e)
+            return(['Item not in database.'])
         returnString = [response['Item']['FirstName'] + " " + response['Item']['LastName'] + " " + response['Item']['MemberData'][:-1]]
         return returnString
     elif lastName:
@@ -103,6 +105,23 @@ def QueryDynamodb(currTableName, lastName, firstName):
             return(['Item not in database.'])
 
         dataString = [[item['FirstName'], item['LastName'], item['MemberData']] for item in response['Items']]
+        returnStringList = [' '.join(dataString[i]) for i in range(len(dataString))]
+        returnString = ' '.join(returnStringList)
+        print(returnStringList)
+
+        return returnStringList
+    elif firstName:
+        try:
+            response = table.scan(
+                FilterExpression=Attr('FirstName').begins_with(firstName)
+            )
+        except Exception as e:
+            print("get item error; last: ", e)
+            return(['Item not in database.'])
+
+        dataString = [[item['FirstName'], item['LastName'], item['MemberData']] for item in response['Items']]
+        if len(dataString) == 0:
+            return (['Item not in database.'])
         returnStringList = [' '.join(dataString[i]) for i in range(len(dataString))]
         returnString = ' '.join(returnStringList)
         print(returnStringList)
