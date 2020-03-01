@@ -3,6 +3,7 @@ import urllib.request
 import DynamoUtils
 import S3Utils
 import string
+import boto3
 
 
 # EB looks for an 'application' callable by default.
@@ -17,7 +18,7 @@ def GetS3BucketName():
 def GetLocalFileName():
     return 'input.txt'
 
-
+# DATA_LOADED = False
     
 
 @application.route('/')
@@ -28,8 +29,20 @@ def HomePage():
 def QueryName():
     lastName = request.form['last'].lower().title()
     firstName = request.form['first'].lower().title()
+    if not lastName and not firstName:
+        return render_template('index.html', queryMessage = ['Enter a first and/or last name'])
+
+    dynamodb = boto3.client('dynamodb', region_name='us-west-2')
+    try:
+        response = dynamodb.describe_table(TableName = GetDynamoDbTableName())
+    except Exception as e:
+        print('Query error: ', e)
+        return render_template('index.html', queryMessage =['Database not yet loaded'])
+    
     message = DynamoUtils.QueryDynamodb(GetDynamoDbTableName(), lastName, firstName)
     return render_template('index.html', queryMessage = message)
+    # else:
+    #     return render_template('index.html', queryMessage = ['First, click "Load" to load data into database'])
 
 @application.route('/load/', methods=['POST'])
 def LoadData():
@@ -67,25 +80,31 @@ def LoadData():
     # upload data from local file to dynamodb
     localFileToDynamo = DynamoUtils.InputLocalFileDataToDynamoDB(localFileName, currTableName)
 
-
+    # DATA_LOADED = True
     message = "Loaded data to local file, then s3 bucket, then dynamodb."
     return render_template('index.html', loadMessage=message)
 
 
 @application.route('/delete/', methods=['POST'])
 def DeleteData():
+    noDataMessage = "No data to delete yet"
+    # if not DATA_LOADED:
+    #     return render_template('index.html', deleteMessage=noDataMessage)
     try:
         DynamoUtils.DeleteDynamoTable(GetDynamoDbTableName())
     except Exception as e:
         print("Error deleting dynamodb from appl.py: ", e)
+        return render_template('index.html', deleteMessage=noDataMessage)
     try:
         S3Utils.DeleteLocalFile(GetLocalFileName())
     except Exception as e:
         print("Error deleting local file from app.py: ", e)
+        return render_template('index.html', deleteMessage=noDataMessage)
     try:
         S3Utils.DeleteS3Bucket(GetS3BucketName())
     except Exception as e:
         print("Error deleting s3 bucket from app.py: ", e)
+        return render_template('index.html', deleteMessage=noDataMessage)
     message = "Deleted local file, s3 bucket, and dynamodb."
     return render_template('index.html', deleteMessage=message)
 

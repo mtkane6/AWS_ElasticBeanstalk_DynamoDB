@@ -3,8 +3,6 @@ import DynamoUtils
 import os
 import datetime
 
-
-
 def CreateS3Bucket(bucketName):
     s3 = boto3.resource("s3")
     try:
@@ -43,6 +41,7 @@ def CopyFileToS3(localFileName, bucketName):
                 currentPath = root+slash+currentFile
                 if localFileName in currentPath:
                     if not str.startswith(currentFile,'.DS_'): # for MacOS, this skips ".DS_Store" files, which serve indexing purposes.
+                        
                         # get last modified time of local file
                         try:
                             localFileLastModified = datetime.datetime.utcfromtimestamp(os.path.getmtime(currentPath)).strftime('%Y-%m-%d %H:%M:%S')
