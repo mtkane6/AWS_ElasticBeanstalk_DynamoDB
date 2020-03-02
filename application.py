@@ -13,13 +13,10 @@ def GetDynamoDbTableName():
     return '0727916mtkuweduDataMemberscss436'
 
 def GetS3BucketName():
-    return '0727916mtkuwedudatamemberscss436'
+    return 'elasticbeanstalk-us-west-2-773350788653'
 
-def GetLocalFileName():
-    return 'input.txt'
-
-# DATA_LOADED = False
-    
+def GetS3FileName():
+    return 'Input.txt'    
 
 @application.route('/')
 def HomePage():
@@ -41,8 +38,7 @@ def QueryName():
     
     message = DynamoUtils.QueryDynamodb(GetDynamoDbTableName(), lastName, firstName)
     return render_template('index.html', queryMessage = message)
-    # else:
-    #     return render_template('index.html', queryMessage = ['First, click "Load" to load data into database'])
+    
 
 @application.route('/load/', methods=['POST'])
 def LoadData():
@@ -70,42 +66,35 @@ def LoadData():
 
     # split each line of data into lists of individual strings
     dataList = [[line.split(' ')[i] for i in range(len(line.split(' ')))] for line in textLines]
+    
+    cleanedDataList = S3Utils.CleanDataString(dataList)
 
-    # create local file with data from url endpoint
-    localFileName = S3Utils.CreateFileForS3(dataList, GetLocalFileName())
-
-    # copy local file created above to s3 bucket
-    s3Boolean = S3Utils.CopyFileToS3(localFileName, bucketCreationName)
+    S3Utils.WriteDataToS3(cleanedDataList, GetS3BucketName())
 
     # upload data from local file to dynamodb
-    localFileToDynamo = DynamoUtils.InputLocalFileDataToDynamoDB(localFileName, currTableName)
+    localFileToDynamo = DynamoUtils.InputLocalFileDataToDynamoDB(cleanedDataList, currTableName)
 
-    # DATA_LOADED = True
-    message = "Loaded data to local file, then s3 bucket, then dynamodb."
+    message = "Loaded data to s3 bucket, then dynamodb."
     return render_template('index.html', loadMessage=message)
 
 
 @application.route('/delete/', methods=['POST'])
 def DeleteData():
     noDataMessage = "No data to delete yet"
-    # if not DATA_LOADED:
-    #     return render_template('index.html', deleteMessage=noDataMessage)
+    
     try:
-        DynamoUtils.DeleteDynamoTable(GetDynamoDbTableName())
+        response = DynamoUtils.DeleteDynamoTable(GetDynamoDbTableName())
+        if not response:
+            return render_template('index.html', deleteMessage=noDataMessage)
     except Exception as e:
         print("Error deleting dynamodb from appl.py: ", e)
         return render_template('index.html', deleteMessage=noDataMessage)
     try:
-        S3Utils.DeleteLocalFile(GetLocalFileName())
-    except Exception as e:
-        print("Error deleting local file from app.py: ", e)
-        return render_template('index.html', deleteMessage=noDataMessage)
-    try:
-        S3Utils.DeleteS3Bucket(GetS3BucketName())
+        S3Utils.DeleteS3BucketObject(GetS3BucketName(), GetS3FileName())
     except Exception as e:
         print("Error deleting s3 bucket from app.py: ", e)
         return render_template('index.html', deleteMessage=noDataMessage)
-    message = "Deleted local file, s3 bucket, and dynamodb."
+    message = "Deleted s3 bucket object, and dynamodb."
     return render_template('index.html', deleteMessage=message)
 
 

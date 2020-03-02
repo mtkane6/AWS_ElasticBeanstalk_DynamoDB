@@ -6,6 +6,12 @@ from boto3.dynamodb.conditions import Key, Attr
 
 
 def CreateTable(tableName):
+    dynamodb = boto3.client('dynamodb', region_name='us-west-2')
+    try:
+        DeleteDynamoTable(tableName)
+        print("Table existed, deleted prior to reloading")
+    except Exception as e:
+        print('Query error in DynamoUtils.createTable: ', e)
     dynamodb = boto3.resource('dynamodb', region_name='us-west-2')
     try:
         table = dynamodb.create_table(
@@ -38,12 +44,12 @@ def CreateTable(tableName):
         return tableName
     except Exception as e:
         print("Creating db table, ignoring error: ", e)
-        return(tableName)
+        return(e)
 
 
 # locaFileName = 'input.txt'
-def InputLocalFileDataToDynamoDB(localFileName, currTableName):
-    localFile = open(localFileName, 'r')
+def InputLocalFileDataToDynamoDB(cleanedDataList, currTableName):
+    listOfData = cleanedDataList.split('\n')
     try:
         dynamodb = boto3.resource('dynamodb', region_name='us-west-2')
         table = dynamodb.Table(currTableName)
@@ -51,7 +57,7 @@ def InputLocalFileDataToDynamoDB(localFileName, currTableName):
         print("Open dynamo table error: ", e)
         return(False)
     try:
-        for line in localFile:
+        for line in listOfData:
             currentLine = line[:-2].split(" ")
             currentLine = line.split(" ")
             lastName = currentLine[0]
@@ -157,4 +163,4 @@ def DeleteDynamoTable(tableName):
         table.delete()
         return("Delete table success.")
     except:
-        return("No data to delete.")
+        return(False)
