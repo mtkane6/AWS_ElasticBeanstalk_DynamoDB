@@ -58,22 +58,23 @@ def InputLocalFileDataToDynamoDB(cleanedDataList, currTableName):
         return(False)
     try:
         for line in listOfData:
-            currentLine = line[:-2].split(" ")
+            # currentLine = line[:-2].split(" ")
             currentLine = line.split(" ")
-            lastName = currentLine[0]
-            firstName = currentLine[1]
-            memberData = " ".join(currentLine[2:])
-            try:
-                table.put_item(
-                    Item={
-                        'LastName': lastName,
-                        'FirstName': firstName,
-                        'MemberData': memberData,        
-                        }
-                )
-            except Exception as e:
-                print("Input data error: ", e)
-                return(False)
+            if len(currentLine) > 2:
+                lastName = currentLine[0]
+                firstName = currentLine[1]
+                memberData = " ".join(currentLine[2:])
+                try:
+                    table.put_item(
+                        Item={
+                            'LastName': lastName,
+                            'FirstName': firstName,
+                            'MemberData': memberData,        
+                            }
+                    )
+                except Exception as e:
+                    print("Input data error: ", e)
+                    return(False)
     except Exception as e:
         print("Parse file data error: ", e)
         return(False)
